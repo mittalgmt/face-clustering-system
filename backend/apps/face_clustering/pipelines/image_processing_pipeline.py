@@ -33,8 +33,8 @@ from apps.face_clustering.services.dto import (
     ProcessedImage,
     PipelineResult,
 )
-from apps.face_clustering.services.hash_service import HashService
-from apps.face_clustering.services.duplicate_service import DuplicateService
+from apps.face_clustering.common.hash_service import HashService
+from apps.face_clustering.common.duplicate_service import DuplicateService
 from apps.face_clustering.services.face_detection_service import (
     FaceDetectionService,
 )
