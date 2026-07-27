@@ -1,79 +1,42 @@
-"""
-Repository for Cluster.
-"""
-
 from __future__ import annotations
 
 from django.db import transaction
 
-from apps.face_clustering.models.cluster import (
-    Cluster,
-)
-
-from apps.face_clustering.models.cluster_image import (
-    ClusterImage,
-)
-
-from apps.face_clustering.models.processing_job import (
-    ProcessingJob,
-)
-
-from apps.face_clustering.models.uploaded_image import (
-    UploadedImage,
-)
+from apps.face_clustering.models.cluster import Cluster
+from apps.face_clustering.models.cluster_image import ClusterImage
+from apps.face_clustering.models.processing_job import ProcessingJob
 
 
 class ClusterRepository:
+    """Repository for cluster database operations."""
 
     @staticmethod
-    @transaction.atomic
     def create_cluster(
         *,
         job: ProcessingJob,
-        cluster_number: int,
-        centroid,
+        label: int,
+        confidence: float,
     ) -> Cluster:
-
         return Cluster.objects.create(
             job=job,
-            cluster_number=cluster_number,
-            centroid=centroid.tolist(),
-        )
-
-    @staticmethod
-    @transaction.atomic
-    def add_image(
-        *,
-        cluster: Cluster,
-        image: UploadedImage,
-        confidence: float,
-        distance: float,
-    ) -> ClusterImage:
-
-        return ClusterImage.objects.create(
-            cluster=cluster,
-            image=image,
+            label=label,
             confidence=confidence,
-            distance_to_centroid=distance,
         )
 
     @staticmethod
-    def get_clusters(
+    def bulk_create_cluster_images(
+        cluster_images: list[ClusterImage],
+    ) -> None:
+        with transaction.atomic():
+            ClusterImage.objects.bulk_create(cluster_images)
+
+    @staticmethod
+    def get_clusters_by_job(
         job: ProcessingJob,
     ):
-
         return (
             Cluster.objects
             .filter(job=job)
-            .prefetch_related("images")
-            .order_by("cluster_number")
+            .prefetch_related("cluster_images")
+            .order_by("label")
         )
-
-    @staticmethod
-    def delete_job_clusters(
-        job: ProcessingJob,
-    ) -> None:
-
-        Cluster.objects.filter(
-            job=job
-        ).delete()

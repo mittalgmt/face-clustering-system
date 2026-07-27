@@ -1,54 +1,33 @@
-"""
-Repository for UploadedImage.
-"""
-
 from __future__ import annotations
 
-from typing import Optional
+from typing import Iterable
 
 from django.db import transaction
 
-from apps.face_clustering.models.uploaded_image import (
-    UploadedImage,
-)
-from apps.face_clustering.models.processing_job import (
-    ProcessingJob,
-)
+from apps.face_clustering.models.processing_job import ProcessingJob
+from apps.face_clustering.models.uploaded_image import UploadedImage
 
 
 class ImageRepository:
+    """Repository for UploadedImage database operations."""
 
     @staticmethod
-    @transaction.atomic
-    def create(
-        *,
-        job: ProcessingJob,
-        image,
-        image_hash: str,
-    ) -> UploadedImage:
-
-        return UploadedImage.objects.create(
-            job=job,
-            image=image,
-            image_hash=image_hash,
-        )
-
-    @staticmethod
-    def find_by_hash(
-        image_hash: str,
-    ) -> Optional[UploadedImage]:
-
-        return (
-            UploadedImage.objects
-            .filter(image_hash=image_hash)
-            .first()
-        )
+    def bulk_create(
+        images: Iterable[UploadedImage],
+    ) -> list[UploadedImage]:
+        """
+        Bulk insert uploaded images.
+        """
+        with transaction.atomic():
+            return UploadedImage.objects.bulk_create(images)
 
     @staticmethod
     def get_by_job(
         job: ProcessingJob,
     ):
-
+        """
+        Get all images belonging to a job.
+        """
         return (
             UploadedImage.objects
             .filter(job=job)
@@ -56,28 +35,33 @@ class ImageRepository:
         )
 
     @staticmethod
-    def save(
-        image: UploadedImage,
-    ) -> None:
+    def get_by_id(image_id):
+        """
+        Get image by id.
+        """
+        try:
+            return UploadedImage.objects.get(id=image_id)
+        except UploadedImage.DoesNotExist:
+            return None
 
+    @staticmethod
+    def save(image: UploadedImage):
+        """
+        Save image changes.
+        """
         image.save()
+        return image
 
     @staticmethod
-    def delete(
-        image: UploadedImage,
-    ) -> None:
-
-        image.delete()
-
-    @staticmethod
-    def completed_images(
-        job: ProcessingJob,
+    def bulk_update(
+        images: list[UploadedImage],
+        fields: list[str],
     ):
-
-        return (
-            UploadedImage.objects
-            .filter(
-                job=job,
-                processing_status="COMPLETED",
+        """
+        Bulk update images.
+        """
+        with transaction.atomic():
+            UploadedImage.objects.bulk_update(
+                images,
+                fields,
             )
-        )
