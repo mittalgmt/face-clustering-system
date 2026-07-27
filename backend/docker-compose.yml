@@ -1,0 +1,251 @@
+version: "3.9"
+
+services:
+
+  # ============================================================================
+  # PostgreSQL
+  # ============================================================================
+
+  postgres:
+
+    image: postgres:16
+
+    container_name: face_postgres
+
+    restart: unless-stopped
+
+    environment:
+
+      POSTGRES_DB: ${POSTGRES_DB}
+
+      POSTGRES_USER: ${POSTGRES_USER}
+
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+
+      - "5432:5432"
+
+    volumes:
+
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+
+      interval: 10s
+
+      timeout: 5s
+
+      retries: 5
+
+    networks:
+
+      - face_network
+
+
+  # ============================================================================
+  # Redis
+  # ============================================================================
+
+  redis:
+
+    image: redis:7-alpine
+
+    container_name: face_redis
+
+    restart: unless-stopped
+
+    command: redis-server --appendonly yes
+
+    ports:
+
+      - "6379:6379"
+
+    volumes:
+
+      - redis_data:/data
+
+    healthcheck:
+
+      test: ["CMD", "redis-cli", "ping"]
+
+      interval: 10s
+
+      timeout: 5s
+
+      retries: 5
+
+    networks:
+
+      - face_network
+
+
+  # ============================================================================
+  # Django Backend
+  # ============================================================================
+
+  backend:
+
+    build:
+
+      context: .
+
+      dockerfile: Dockerfile
+
+    container_name: face_backend
+
+    restart: unless-stopped
+
+    command: gunicorn config.wsgi:application \
+             --bind 0.0.0.0:8000 \
+             --workers 4 \
+             --threads 2 \
+             --timeout 300
+
+    env_file:
+
+      - .env
+
+    volumes:
+
+      - .:/app
+
+      - media_data:/app/media
+
+      - static_data:/app/staticfiles
+
+      - model_data:/app/models
+
+    ports:
+
+      - "8000:8000"
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+      redis:
+
+        condition: service_healthy
+
+    networks:
+
+      - face_network
+
+
+  # ============================================================================
+  # Celery Worker
+  # ============================================================================
+
+  celery_worker:
+
+    build:
+
+      context: .
+
+      dockerfile: Dockerfile
+
+    container_name: celery_worker
+
+    restart: unless-stopped
+
+    command: celery -A config worker --loglevel=INFO
+
+    env_file:
+
+      - .env
+
+    volumes:
+
+      - .:/app
+
+      - media_data:/app/media
+
+      - model_data:/app/models
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+      redis:
+
+        condition: service_healthy
+
+    networks:
+
+      - face_network
+
+
+  # ============================================================================
+  # Celery Beat
+  # ============================================================================
+
+  celery_beat:
+
+    build:
+
+      context: .
+
+      dockerfile: Dockerfile
+
+    container_name: celery_beat
+
+    restart: unless-stopped
+
+    command: celery -A config beat --loglevel=INFO
+
+    env_file:
+
+      - .env
+
+    volumes:
+
+      - .:/app
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+      redis:
+
+        condition: service_healthy
+
+    networks:
+
+      - face_network
+
+
+# ==============================================================================
+# Networks
+# ==============================================================================
+
+networks:
+
+  face_network:
+
+    driver: bridge
+
+
+# ==============================================================================
+# Volumes
+# ==============================================================================
+
+volumes:
+
+  postgres_data:
+
+  redis_data:
+
+  media_data:
+
+  static_data:
+
+  model_data:
