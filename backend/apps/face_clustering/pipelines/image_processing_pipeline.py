@@ -29,16 +29,16 @@ from apps.face_clustering.models.processing_job import ProcessingJob
 from apps.face_clustering.models.uploaded_image import UploadedImage
 from apps.face_clustering.repositories.image_repository import ImageRepository
 from apps.face_clustering.repositories.embedding_repository import EmbeddingRepository
-from apps.face_clustering.services.dto import (
+from apps.face_clustering.common.dto import (
     ProcessedImage,
     PipelineResult,
 )
 from apps.face_clustering.common.hash_service import HashService
 from apps.face_clustering.common.duplicate_service import DuplicateService
-from apps.face_clustering.services.face_detection_service import (
+from apps.face_clustering.ai.face_detection_service import (
     FaceDetectionService,
 )
-from apps.face_clustering.services.embedding_service import (
+from apps.face_clustering.ai.embedding_service import (
     EmbeddingService,
 )
 from apps.face_clustering.utils.exceptions import (

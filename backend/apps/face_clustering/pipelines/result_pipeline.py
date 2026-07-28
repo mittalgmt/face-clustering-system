@@ -24,7 +24,7 @@ from apps.face_clustering.repositories.cluster_repository import (
 from apps.face_clustering.repositories.job_repository import (
     JobRepository,
 )
-from apps.face_clustering.services.dto import (
+from apps.face_clustering.common.dto import (
     ClusterDTO,
     ClusteringPipelineResult,
 )

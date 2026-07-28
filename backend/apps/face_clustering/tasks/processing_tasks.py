@@ -25,19 +25,19 @@ from apps.face_clustering.ai.embedding_service import EmbeddingService
 from apps.face_clustering.ai.clustering_service import ClusteringService
 from apps.face_clustering.ai.confidence_service import ConfidenceService
 
-from apps.face_clustering.services.image_processing_pipeline import (
+from apps.face_clustering.pipelines.image_processing_pipeline import (
     ImageProcessingPipeline,
 )
 
-from apps.face_clustering.services.cluster_pipeline import (
+from apps.face_clustering.pipelines.cluster_pipeline import (
     ClusterPipeline,
 )
 
-from apps.face_clustering.services.result_pipeline import (
+from apps.face_clustering.pipelines.result_pipeline import (
     ResultPipeline,
 )
 
-from apps.face_clustering.services.processing_service import (
+from apps.face_clustering.application.processing_service import (
     ProcessingService,
 )
 

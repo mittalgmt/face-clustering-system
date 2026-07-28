@@ -23,16 +23,17 @@ from django.db import transaction
 
 from apps.face_clustering.models.processing_job import ProcessingJob
 from apps.face_clustering.repositories.job_repository import JobRepository
-from apps.face_clustering.services.image_processing_pipeline import (
+from apps.face_clustering.pipelines.image_processing_pipeline import (
     ImageProcessingPipeline,
 )
-from apps.face_clustering.services.cluster_pipeline import (
+
+from apps.face_clustering.pipelines.cluster_pipeline import (
     ClusterPipeline,
 )
-from apps.face_clustering.services.result_pipeline import (
+
+from apps.face_clustering.pipelines.result_pipeline import (
     ResultPipeline,
 )
-
 logger = logging.getLogger(__name__)
 
 

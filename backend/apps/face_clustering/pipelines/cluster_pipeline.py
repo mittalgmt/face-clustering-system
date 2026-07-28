@@ -29,16 +29,16 @@ from collections import defaultdict
 
 import numpy as np
 
-from apps.face_clustering.services.dto import (
+from apps.face_clustering.common.dto import (
     ClusterDTO,
     ClusterItem,
     ClusteringPipelineResult,
     ProcessedImage,
 )
-from apps.face_clustering.services.clustering_service import (
+from apps.face_clustering.ai.clustering_service import (
     ClusteringService,
 )
-from apps.face_clustering.services.confidence_service import (
+from apps.face_clustering.ai.confidence_service import (
     ConfidenceService,
 )
 
