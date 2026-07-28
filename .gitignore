@@ -37,3 +37,9 @@ Thumbs.db
 
 **/migrations/*
 !**/migrations/__init__.py
+
+# AI Models
+backend/models/
+# OR, if you only want to ignore buffalo_l:
+# backend/models/buffalo_l/
+# backend/models/buffalo_l.zip

@@ -42,12 +42,12 @@ class FaceDetectionService:
         self.model = FaceAnalysis(
             name=settings.INSIGHTFACE_MODEL_NAME,
             root=str(settings.INSIGHTFACE_MODEL_ROOT),
+            providers=settings.ONNX_PROVIDER,
         )
 
         self.model.prepare(
             ctx_id=0,
             det_size=(640, 640),
-            providers=settings.ONNX_PROVIDER,
         )
 
     def detect(self, image_path: str):

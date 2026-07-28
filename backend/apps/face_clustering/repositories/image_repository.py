@@ -19,6 +19,14 @@ class ImageRepository:
         Bulk insert uploaded images.
         """
         with transaction.atomic():
+            images = list(images)
+
+            for image in images:
+                if not image.image_hash:
+                    raise ValueError(
+                        "image_hash must be set before bulk_create()."
+                    )
+
             return UploadedImage.objects.bulk_create(images)
 
     @staticmethod
@@ -41,6 +49,16 @@ class ImageRepository:
         """
         try:
             return UploadedImage.objects.get(id=image_id)
+        except UploadedImage.DoesNotExist:
+            return None
+
+    @staticmethod
+    def find_by_hash(image_hash: str) -> UploadedImage | None:
+        """
+        Find image by SHA256 hash.
+        """
+        try:
+            return UploadedImage.objects.get(image_hash=image_hash)
         except UploadedImage.DoesNotExist:
             return None
 

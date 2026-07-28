@@ -84,7 +84,7 @@ class ProcessingService:
 
             self.job_repository.update_progress(
                 job,
-                50,
+                progress=50,
             )
 
             # -----------------------------
@@ -99,7 +99,7 @@ class ProcessingService:
 
             self.job_repository.update_progress(
                 job,
-                80,
+                progress=80,
             )
 
             # -----------------------------
@@ -113,8 +113,10 @@ class ProcessingService:
 
             self.job_repository.update_progress(
                 job,
-                100,
+                progress=100,
             )
+
+            self.job_repository.mark_completed(job)
 
             logger.info(
                 "Job %s completed successfully.",

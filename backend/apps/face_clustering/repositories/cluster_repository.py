@@ -14,13 +14,18 @@ class ClusterRepository:
     def create_cluster(
         *,
         job: ProcessingJob,
-        label: int,
-        confidence: float,
+        cluster_number: int,
+        centroid,
     ) -> Cluster:
+        """
+        Create a cluster.
+        """
         return Cluster.objects.create(
             job=job,
-            label=label,
-            confidence=confidence,
+            cluster_number=cluster_number,
+            centroid=centroid.tolist()
+            if hasattr(centroid, "tolist")
+            else centroid,
         )
 
     @staticmethod
@@ -31,12 +36,39 @@ class ClusterRepository:
             ClusterImage.objects.bulk_create(cluster_images)
 
     @staticmethod
+    def delete_job_clusters(
+        job: ProcessingJob,
+    ) -> None:
+        """
+        Delete all clusters for a job.
+        """
+        Cluster.objects.filter(job=job).delete()
+
+    @staticmethod
+    def add_image(
+        *,
+        cluster: Cluster,
+        image,
+        confidence: float,
+        distance: float,
+    ) -> ClusterImage:
+        """
+        Add an image to a cluster.
+        """
+        return ClusterImage.objects.create(
+            cluster=cluster,
+            image=image,
+            confidence=confidence,
+            distance_to_centroid=distance,
+        )
+
+    @staticmethod
     def get_clusters_by_job(
         job: ProcessingJob,
     ):
         return (
             Cluster.objects
             .filter(job=job)
-            .prefetch_related("cluster_images")
-            .order_by("label")
+            .prefetch_related("images")
+            .order_by("cluster_number")
         )

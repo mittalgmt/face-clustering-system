@@ -104,14 +104,14 @@ class ImageProcessingPipeline:
 
                 processed_images.append(processed)
 
-            except Exception:
+            except Exception as e:
 
                 logger.exception(
                     "Failed processing image %s",
                     image.id,
                 )
 
-                image.mark_failed()
+                image.mark_failed(str(e))
 
                 failed_images.append(image)
 
@@ -131,13 +131,8 @@ class ImageProcessingPipeline:
 
         image.mark_processing()
 
-        image_hash = self.hash_service.calculate_sha256(
-            image.image.path
-        )
-
-        image.image_hash = image_hash
-
-        self.image_repository.save(image)
+        # Hash was already generated during upload
+        image_hash = image.image_hash
 
         duplicate = self.duplicate_service.check_duplicate(
             image_hash
