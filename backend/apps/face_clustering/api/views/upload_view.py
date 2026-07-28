@@ -32,14 +32,15 @@ class UploadView(APIView):
             images = []
 
             for file in uploaded_files:
+                print("=" * 60)
+                print("File Name:", file.name)
 
-                # Read uploaded file bytes
                 file_bytes = file.read()
+                print("File Size:", len(file_bytes))
 
-                # Calculate SHA256 hash
                 image_hash = HashService.calculate_bytes_sha256(file_bytes)
+                print("SHA256:", image_hash)
 
-                # Reset file pointer so Django can save it
                 file.seek(0)
 
                 images.append(
