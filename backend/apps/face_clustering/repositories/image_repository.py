@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Iterable
-
 from django.db import transaction
 
 from apps.face_clustering.models.processing_job import ProcessingJob
@@ -10,24 +8,6 @@ from apps.face_clustering.models.uploaded_image import UploadedImage
 
 class ImageRepository:
     """Repository for UploadedImage database operations."""
-
-    @staticmethod
-    def bulk_create(
-        images: Iterable[UploadedImage],
-    ) -> list[UploadedImage]:
-        """
-        Bulk insert uploaded images.
-        """
-        with transaction.atomic():
-            images = list(images)
-
-            for image in images:
-                if not image.image_hash:
-                    raise ValueError(
-                        "image_hash must be set before bulk_create()."
-                    )
-
-            return UploadedImage.objects.bulk_create(images)
 
     @staticmethod
     def get_by_job(

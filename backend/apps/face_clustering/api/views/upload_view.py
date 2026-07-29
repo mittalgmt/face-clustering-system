@@ -1,14 +1,14 @@
-from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.face_clustering.api.serializers.upload_serializer import UploadSerializer
-from apps.face_clustering.common.hash_service import HashService
-from apps.face_clustering.models.uploaded_image import UploadedImage
-from apps.face_clustering.repositories.image_repository import ImageRepository
-from apps.face_clustering.repositories.job_repository import JobRepository
-from apps.face_clustering.tasks.processing_tasks import process_job_task
+from apps.face_clustering.services.image_upload_service import (
+    ImageUploadService,
+)
+from apps.face_clustering.services.zip_upload_service import (
+    ZipUploadService,
+)
 
 
 class UploadView(APIView):
@@ -22,45 +22,24 @@ class UploadView(APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        uploaded_files = serializer.validated_data["images"]
+        if "zip_file" in serializer.validated_data:
 
-        with transaction.atomic():
-            job = JobRepository.create_job(
-                total_images=len(uploaded_files)
+            job = ZipUploadService().upload(
+                serializer.validated_data["zip_file"]
             )
 
-            images = []
+        else:
 
-            for file in uploaded_files:
-                print("=" * 60)
-                print("File Name:", file.name)
-
-                file_bytes = file.read()
-                print("File Size:", len(file_bytes))
-
-                image_hash = HashService.calculate_bytes_sha256(file_bytes)
-                print("SHA256:", image_hash)
-
-                file.seek(0)
-
-                images.append(
-                    UploadedImage(
-                        job=job,
-                        image=file,
-                        image_hash=image_hash,
-                    )
-                )
-
-            ImageRepository.bulk_create(images)
-
-        process_job_task.delay(str(job.id))
+            job = ImageUploadService().upload(
+                serializer.validated_data["images"]
+            )
 
         return Response(
             {
                 "job_id": str(job.id),
                 "status": job.status,
                 "total_images": job.total_images,
-                "message": "Images uploaded successfully.",
+                "message": "Upload successful.",
             },
             status=status.HTTP_201_CREATED,
         )
