@@ -11,7 +11,7 @@ import logging
 from celery import shared_task
 from django.db import transaction
 
-from apps.face_clustering.models.processing_job import ProcessingJob
+from apps.face_clustering.models.processing_job import ProcessingJob, JobStatus
 
 from apps.face_clustering.repositories.job_repository import JobRepository
 from apps.face_clustering.repositories.image_repository import ImageRepository
@@ -130,7 +130,6 @@ def process_job_task(
     try:
 
         with transaction.atomic():
-
             job = (
                 ProcessingJob.objects
                 .select_for_update()
@@ -138,10 +137,14 @@ def process_job_task(
                     id=job_id,
                 )
             )
+            if job.status in [JobStatus.PROCESSING, JobStatus.COMPLETED]:
+                logger.warning("Job %s is already %s. Skipping.", job_id, job.status)
+                return
+            job.status = JobStatus.PROCESSING
+            job.save(update_fields=["status"])
 
-            service = build_processing_service()
-
-            service.process(job)
+        service = build_processing_service()
+        service.process(job)
 
     except ProcessingJob.DoesNotExist:
 

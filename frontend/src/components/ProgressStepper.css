@@ -1,0 +1,95 @@
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.stepper-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  position: relative;
+  flex: 1;
+}
+
+.stepper-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border-strong);
+  color: var(--text-muted);
+  transition: all var(--transition-normal);
+  position: relative;
+  z-index: 1;
+}
+
+.stepper-circle--active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--accent);
+  color: var(--accent-light);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.stepper-circle--completed {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+.stepper-circle--error {
+  background: var(--error-bg);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.stepper-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: stepper-ripple 2s ease-out infinite;
+}
+
+@keyframes stepper-ripple {
+  0%   { inset: -2px; opacity: 0.6; }
+  100% { inset: -14px; opacity: 0; }
+}
+
+.stepper-label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+  transition: color var(--transition-normal);
+}
+
+.stepper-label--active    { color: var(--accent-light); }
+.stepper-label--completed { color: var(--text-secondary); }
+
+.stepper-line {
+  position: absolute;
+  top: 24px;
+  left: calc(50% + 24px);
+  right: calc(-50% + 24px);
+  height: 2px;
+  background: var(--border-strong);
+  z-index: 0;
+  transition: background var(--transition-slow);
+}
+
+.stepper-line--completed {
+  background: var(--accent);
+}

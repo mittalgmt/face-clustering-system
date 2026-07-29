@@ -77,7 +77,6 @@ class ImageProcessingPipeline:
         self.detector = detector
         self.embedding_service = embedding_service
 
-    @transaction.atomic
     def process_job(
         self,
         job: ProcessingJob,
@@ -91,8 +90,9 @@ class ImageProcessingPipeline:
         skipped_images: list[UploadedImage] = []
 
         images = self.image_repository.get_by_job(job)
+        total_count = len(images)
 
-        for image in images:
+        for i, image in enumerate(images):
 
             try:
 
@@ -114,6 +114,12 @@ class ImageProcessingPipeline:
                 image.mark_failed(str(e))
 
                 failed_images.append(image)
+
+            # Update progress dynamically (0% to 50% of the overall workflow)
+            if total_count > 0:
+                progress = int(((i + 1) / total_count) * 50)
+                job.progress = progress
+                job.save(update_fields=["progress"])
 
         return PipelineResult(
             processed_images=processed_images,

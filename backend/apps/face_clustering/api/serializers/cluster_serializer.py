@@ -20,7 +20,7 @@ class ClusterImageSerializer(serializers.ModelSerializer):
         )
 
     def get_filename(self, obj):
-        return obj.image.image.name.rsplit("/", 1)[-1]
+        return obj.image.image.name  # e.g. uploads/2026/07/29/img_026.jpg
 
 
 class ClusterSerializer(serializers.ModelSerializer):

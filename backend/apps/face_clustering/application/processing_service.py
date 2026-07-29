@@ -19,8 +19,6 @@ from __future__ import annotations
 
 import logging
 
-from django.db import transaction
-
 from apps.face_clustering.models.processing_job import ProcessingJob
 from apps.face_clustering.repositories.job_repository import JobRepository
 from apps.face_clustering.pipelines.image_processing_pipeline import (
@@ -56,7 +54,6 @@ class ProcessingService:
         self.cluster_pipeline = cluster_pipeline
         self.result_pipeline = result_pipeline
 
-    @transaction.atomic
     def process(
         self,
         job: ProcessingJob,

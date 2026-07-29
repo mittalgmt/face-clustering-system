@@ -1,0 +1,69 @@
+.cluster-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  animation: fadeInUp 0.4s ease both;
+}
+
+.cluster-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cluster-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.cluster-card-number {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  width: 44px;
+  text-align: center;
+}
+
+.cluster-card-heading {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cluster-card-count {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.cluster-card-badge {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-light);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.cluster-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+}
+
+.cluster-card-expand {
+  width: 100%;
+  justify-content: center;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-sm);
+  margin-top: var(--space-xs);
+  color: var(--accent-light);
+}
+
+.cluster-card-expand:hover {
+  background: rgba(99, 102, 241, 0.08);
+}

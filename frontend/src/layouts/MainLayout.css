@@ -1,0 +1,30 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.layout-main {
+  flex: 1;
+}
+
+.layout-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--space-lg) 0;
+  margin-top: var(--space-3xl);
+}
+
+.layout-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.layout-footer-tag {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
