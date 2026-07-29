@@ -69,6 +69,6 @@ class ClusterRepository:
         return (
             Cluster.objects
             .filter(job=job)
-            .prefetch_related("images")
+            .prefetch_related("images__image")
             .order_by("cluster_number")
         )

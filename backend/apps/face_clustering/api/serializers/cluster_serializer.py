@@ -9,13 +9,18 @@ class ClusterImageSerializer(serializers.ModelSerializer):
     Serializer for images inside a cluster.
     """
 
+    filename = serializers.SerializerMethodField()
+
     class Meta:
         model = ClusterImage
         fields = (
-            "id",
-            "uploaded_image",
+            "filename",
             "confidence",
+            "distance_to_centroid",
         )
+
+    def get_filename(self, obj):
+        return obj.image.image.name.rsplit("/", 1)[-1]
 
 
 class ClusterSerializer(serializers.ModelSerializer):
@@ -24,22 +29,15 @@ class ClusterSerializer(serializers.ModelSerializer):
     """
 
     images = ClusterImageSerializer(
-        source="cluster_images",
         many=True,
         read_only=True,
     )
-
-    image_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Cluster
         fields = (
             "id",
-            "label",
-            "confidence",
+            "cluster_number",
             "image_count",
             "images",
         )
-
-    def get_image_count(self, obj):
-        return obj.cluster_images.count()

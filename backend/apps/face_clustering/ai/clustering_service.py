@@ -30,7 +30,7 @@ class ClusteringService:
 
     def __init__(
         self,
-        eps: float = 0.35,
+        eps: float = 0.40,
         min_samples: int = 2,
     ) -> None:
 
