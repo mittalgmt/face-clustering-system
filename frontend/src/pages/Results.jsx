@@ -19,7 +19,7 @@ function NoiseCard({ item }) {
     isFailed ? 'badge-failed' :
     'badge-pending' // Outliers / pending
 
-  const displayName = item.filename.split('/').pop()
+  const displayName = item.filename.replace(/\\/g, '/').split('/').pop()
 
   return (
     <div className="noise-card glass-card">

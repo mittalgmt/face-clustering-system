@@ -53,7 +53,6 @@ export default function Processing() {
           <h1 className="proc-title">
             {isFailed ? 'Processing Failed' : isCompleted ? 'Done!' : 'Processing…'}
           </h1>
-          <p className="proc-subtitle">Job ID: <code className="proc-id">{jobId}</code></p>
         </div>
 
         {/* Stepper */}

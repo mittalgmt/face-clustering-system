@@ -8,10 +8,11 @@ venv/
 .venv/
 env/
 
-# Environment Variables
+# Environment Variables (DO NOT COMMIT SECRETS OR ENV FILES)
 .env
 .env.*
 !.env.example
+backend/.env
 
 # Logs
 *.log

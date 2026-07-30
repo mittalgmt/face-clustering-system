@@ -83,25 +83,16 @@ class ClusterPipeline:
             ],
             dtype=np.float32,
         )
-        from sklearn.metrics.pairwise import cosine_similarity
-
-        similarity = cosine_similarity(embeddings)
-
-        logger.warning("=" * 70)
-        logger.warning("COSINE SIMILARITY MATRIX")
-        logger.warning("\n%s", similarity)
-        logger.warning("=" * 70)
-
         clustering = self.clustering_service.cluster(
             embeddings
         )
-        logger.warning("=" * 60)
-        logger.warning(
+        logger.debug("=" * 60)
+        logger.debug(
             "DBSCAN LABELS: %s",
             clustering.labels.tolist(),
         )
-        logger.warning("=" * 60)
-        logger.warning(
+        logger.debug("=" * 60)
+        logger.debug(
             "Total clusters: %s | Noise points: %s",
             clustering.total_clusters,
             clustering.noise_points,
@@ -115,7 +106,7 @@ class ClusterPipeline:
             clustering.labels,
             processed_images,
         ):
-            logger.warning(
+            logger.debug(
                 "%s --> Label: %s",
                 image.image.image.name,
                 label,

@@ -16,8 +16,10 @@ class ConfidenceService:
     def normalize(
         vector: np.ndarray,
     ) -> np.ndarray:
-
-        return vector / np.linalg.norm(vector)
+        norm = np.linalg.norm(vector)
+        if norm == 0:
+            return vector
+        return vector / norm
 
     def centroid(
         self,
@@ -50,18 +52,21 @@ class ConfidenceService:
         """
         Returns confidence percentage.
         """
+        norm_emb = self.normalize(embedding)
+        norm_centroid = self.normalize(centroid)
 
         similarity = self.cosine_similarity(
-            embedding,
-            centroid,
+            norm_emb,
+            norm_centroid,
         )
 
-        confidence = similarity * 100
+        threshold = 0.3
+        if similarity <= threshold:
+            return 0.0
 
-        return max(
-            0.0,
-            min(100.0, confidence),
-        )
+        confidence = ((similarity - threshold) / (1.0 - threshold)) * 100.0
+
+        return float(min(100.0, confidence))
 
     @staticmethod
     def distance(
@@ -71,12 +76,14 @@ class ConfidenceService:
         """
         Cosine distance.
         """
+        norm_a = ConfidenceService.normalize(embedding)
+        norm_b = ConfidenceService.normalize(centroid)
 
         similarity = float(
             np.dot(
-                embedding,
-                centroid,
+                norm_a,
+                norm_b,
             )
         )
 
-        return 1 - similarity
+        return 1.0 - similarity

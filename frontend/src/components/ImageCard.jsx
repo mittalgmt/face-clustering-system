@@ -5,7 +5,7 @@ const FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' w
 /** Extract just the filename from a full path like uploads/2026/07/29/img.jpg */
 function basename(path) {
   if (!path) return ''
-  return path.split('/').pop()
+  return path.replace(/\\/g, '/').split('/').pop()
 }
 
 /**
