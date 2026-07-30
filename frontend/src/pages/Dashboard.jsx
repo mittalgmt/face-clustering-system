@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DashboardCard from '../components/DashboardCard'
 import { getJobs, deleteJob, reclusterJob, downloadJobResults } from '../api/jobsApi'
+import { useToast } from '../context/ToastContext'
+import { getFriendlyErrorMessage } from '../utils/errors'
 import './Dashboard.css'
 
 const CUSTOM_NAMES_KEY = 'faceClusterCustomNames'
@@ -39,6 +41,7 @@ function formatDate(iso) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -69,7 +72,9 @@ export default function Dashboard() {
       setError(null)
     } catch (err) {
       console.error('Failed to fetch jobs:', err)
-      setError('Could not load jobs from backend.')
+      const friendly = getFriendlyErrorMessage(err)
+      setError(friendly.message)
+      showToast(friendly.message, 'error', friendly.suggestion)
     } finally {
       if (showLoading) setLoading(false)
     }
@@ -149,8 +154,11 @@ export default function Dashboard() {
 
       setDeleteConfirmJob(null)
       fetchJobs(false)
+      
+      showToast("Job archived successfully.", "success")
     } catch (err) {
-      alert('Failed to delete job.')
+      const friendly = getFriendlyErrorMessage(err)
+      showToast(friendly.message, "error", friendly.suggestion)
     } finally {
       setDeleting(false)
     }
@@ -161,9 +169,11 @@ export default function Dashboard() {
     setReclusteringIds((prev) => new Set([...prev, jobId]))
     try {
       await reclusterJob(jobId)
+      showToast("Re-clustering job version scheduled successfully.", "success")
       fetchJobs(false)
     } catch (err) {
-      alert('Failed to trigger re-clustering.')
+      const friendly = getFriendlyErrorMessage(err)
+      showToast(friendly.message, "error", friendly.suggestion)
     } finally {
       setReclusteringIds((prev) => {
         const next = new Set(prev)
@@ -179,7 +189,7 @@ export default function Dashboard() {
     try {
       await downloadJobResults(jobId)
     } catch (err) {
-      alert('Failed to download results.')
+      showToast('Failed to download results.', 'error')
     } finally {
       setDownloadingIds((prev) => {
         const next = new Set(prev)
@@ -311,12 +321,36 @@ export default function Dashboard() {
           {/* Jobs Table/Grid */}
           <div className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
             {loading ? (
-              <div className="empty-state">
-                <span className="empty-state-icon spinner" aria-hidden="true">⚙</span>
-                <p>Loading jobs list...</p>
+              <div className="history-table-wrapper">
+                <table className="history-table" aria-label="Loading jobs list">
+                  <thead>
+                    <tr>
+                      <th>Job Name</th>
+                      <th>Job ID</th>
+                      <th>Images</th>
+                      <th>Clusters</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[1, 2, 3, 4, 5].map((idx) => (
+                      <tr key={idx}>
+                        <td><div className="skeleton-line" style={{ width: '120px', height: '16px' }} /></td>
+                        <td><div className="skeleton-line" style={{ width: '180px', height: '16px' }} /></td>
+                        <td><div className="skeleton-line" style={{ width: '40px', height: '16px', margin: '0 auto' }} /></td>
+                        <td><div className="skeleton-line" style={{ width: '40px', height: '16px', margin: '0 auto' }} /></td>
+                        <td><div className="skeleton-line" style={{ width: '110px', height: '16px' }} /></td>
+                        <td><div className="skeleton-line" style={{ width: '80px', height: '24px', borderRadius: '12px' }} /></td>
+                        <td><div className="skeleton-line" style={{ width: '140px', height: '30px' }} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : error ? (
-              <div className="empty-state">
+              <div className="empty-state glass-card">
                 <span className="empty-state-icon" aria-hidden="true">⚠️</span>
                 <p>{error}</p>
                 <button className="btn btn-secondary btn-sm" onClick={() => fetchJobs(true)}>
@@ -324,13 +358,23 @@ export default function Dashboard() {
                 </button>
               </div>
             ) : filteredAndSortedJobs.length === 0 ? (
-              <div className="empty-state">
-                <span className="empty-state-icon" aria-hidden="true">📂</span>
-                <p>{searchQuery ? 'No matching jobs found.' : 'No previous jobs found.'}</p>
-                {!searchQuery && (
-                  <Link to="/upload" className="btn btn-primary btn-sm">
-                    Upload Images
+              <div className="empty-state glass-card">
+                <span className="empty-state-icon" aria-hidden="true" style={{ fontSize: '3.5rem', opacity: 0.5 }}>📂</span>
+                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, margin: 'var(--space-xs) 0' }}>No Jobs Found</h3>
+                <p style={{ color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 auto var(--space-md) auto' }}>
+                  {searchQuery 
+                    ? "We couldn't find any clustering jobs matching your search filters. Try clearing your search or typing a different query." 
+                    : "You haven't uploaded or run any face clustering jobs yet. Get started by uploading your first image collection!"
+                  }
+                </p>
+                {!searchQuery ? (
+                  <Link to="/upload" className="btn btn-primary btn-lg">
+                    ↑ &nbsp;Upload Images
                   </Link>
+                ) : (
+                  <button className="btn btn-secondary" onClick={() => setSearchQuery('')}>
+                    Clear Search
+                  </button>
                 )}
               </div>
             ) : (
@@ -350,7 +394,7 @@ export default function Dashboard() {
                   <tbody>
                     {filteredAndSortedJobs.map((job, i) => {
                       const isEditingName = editingJobId === job.id
-                      const defaultJobName = `Job #${job.id.slice(0, 8)}`
+                      const defaultJobName = "Face Clustering Run"
                       const currentJobName = customNames[job.id] || defaultJobName
 
                       const isReclustering = reclusteringIds.has(job.id)
@@ -519,15 +563,15 @@ export default function Dashboard() {
             
             <div className="modal-body">
               <p>Are you sure you want to delete this job?</p>
-              <p style={{ color: '#ef4444', fontWeight: 600 }}>
-                This will permanently delete the job entry, all computed face clusters, and physically remove all uploaded image files from the backend storage. This action cannot be undone.
+              <p style={{ color: '#fbbf24', fontWeight: 600 }}>
+                This will perform a soft delete. The job will be archived and hidden from your dashboard history. Your uploaded files and database records will be flagged as deleted in the backend to ensure your workspace remains clean.
               </p>
               
               <div className="modal-item-details">
                 <div className="modal-item-row">
                   <span>Job Name:</span>
                   <span className="modal-item-value">
-                    {customNames[deleteConfirmJob.id] || `Job #${deleteConfirmJob.id.slice(0, 8)}`}
+                    {customNames[deleteConfirmJob.id] || "Face Clustering Run"}
                   </span>
                 </div>
                 <div className="modal-item-row">
@@ -559,7 +603,7 @@ export default function Dashboard() {
                 onClick={handleConfirmDelete}
                 disabled={deleting}
               >
-                {deleting ? 'Deleting...' : 'Permanently Delete'}
+                {deleting ? 'Deleting...' : 'Confirm Delete'}
               </button>
             </div>
           </div>

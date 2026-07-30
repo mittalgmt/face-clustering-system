@@ -5,7 +5,7 @@ import './ClusterGrid.css'
  * Responsive grid of cluster cards.
  * @param {{ clusters: Array }} props
  */
-export default function ClusterGrid({ clusters }) {
+export default function ClusterGrid({ clusters, onImageClick, isEditing, allClusters = [], onRename, onMoveImage, onRemoveImage }) {
   if (!clusters || clusters.length === 0) {
     return (
       <div className="empty-state">
@@ -21,6 +21,12 @@ export default function ClusterGrid({ clusters }) {
         <ClusterCard
           key={cluster.id}
           cluster={cluster}
+          onImageClick={onImageClick}
+          isEditing={isEditing}
+          allClusters={allClusters}
+          onRename={onRename}
+          onMoveImage={onMoveImage}
+          onRemoveImage={onRemoveImage}
           style={{ animationDelay: `${i * 60}ms` }}
         />
       ))}

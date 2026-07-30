@@ -63,6 +63,8 @@ class ClusterPipeline:
     def cluster(
         self,
         processed_images: list[ProcessedImage],
+        eps: float = 0.40,
+        min_samples: int = 2,
     ) -> ClusteringPipelineResult:
         """
         Cluster processed images.
@@ -83,6 +85,8 @@ class ClusterPipeline:
             ],
             dtype=np.float32,
         )
+        self.clustering_service.eps = eps
+        self.clustering_service.min_samples = min_samples
         clustering = self.clustering_service.cluster(
             embeddings
         )

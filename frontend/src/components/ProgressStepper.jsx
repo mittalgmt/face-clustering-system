@@ -3,7 +3,8 @@ import './ProgressStepper.css'
 const STEPS = [
   { id: 'upload',     label: 'Upload',     icon: '↑' },
   { id: 'processing', label: 'Processing', icon: '⚙' },
-  { id: 'results',    label: 'Results',    icon: '✓' },
+  { id: 'results',    label: 'Results',    icon: '👥' },
+  { id: 'download',   label: 'Download',   icon: '📥' },
 ]
 
 /**

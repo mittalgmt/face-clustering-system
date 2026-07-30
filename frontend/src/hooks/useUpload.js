@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react'
 import { uploadImages, uploadZip } from '../api/uploadApi'
+import { useToast } from '../context/ToastContext'
+import { getFriendlyErrorMessage } from '../utils/errors'
 
 const HISTORY_KEY = 'faceClusterHistory'
 
@@ -18,6 +20,7 @@ function saveToHistory(job) {
  * Returns { uploading, uploadProgress, error, upload }
  */
 export function useUpload() {
+  const { showToast } = useToast()
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState(null)
@@ -52,7 +55,9 @@ export function useUpload() {
 
       return result
     } catch (err) {
-      setError(err.message)
+      const friendly = getFriendlyErrorMessage(err)
+      setError(friendly.message)
+      showToast(friendly.message, 'error', friendly.suggestion)
       return null
     } finally {
       setUploading(false)

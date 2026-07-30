@@ -28,7 +28,7 @@ class JobRepository:
         Get a job by its ID.
         """
         try:
-            return ProcessingJob.objects.get(id=job_id)
+            return ProcessingJob.objects.get(id=job_id, is_deleted=False)
         except ProcessingJob.DoesNotExist:
             return None
 

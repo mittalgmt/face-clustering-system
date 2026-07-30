@@ -5,6 +5,7 @@ const NAV_LINKS = [
   { to: '/',        label: 'Dashboard', icon: '⬡' },
   { to: '/upload',  label: 'Upload',    icon: '↑' },
   { to: '/history', label: 'History',   icon: '◷' },
+  { to: '/guide',   label: 'User Guide', icon: '📖' },
 ]
 
 export default function Navbar() {

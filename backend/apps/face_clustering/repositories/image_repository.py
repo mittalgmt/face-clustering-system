@@ -35,12 +35,9 @@ class ImageRepository:
     @staticmethod
     def find_by_hash(image_hash: str) -> UploadedImage | None:
         """
-        Find image by SHA256 hash.
+        Find active image by SHA256 hash.
         """
-        try:
-            return UploadedImage.objects.get(image_hash=image_hash)
-        except UploadedImage.DoesNotExist:
-            return None
+        return UploadedImage.objects.filter(image_hash=image_hash, job__is_deleted=False).first()
 
     @staticmethod
     def save(image: UploadedImage):

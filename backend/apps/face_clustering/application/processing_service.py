@@ -90,7 +90,9 @@ class ProcessingService:
 
             clustering_result = (
                 self.cluster_pipeline.cluster(
-                    image_result.processed_images
+                    processed_images=image_result.processed_images,
+                    eps=getattr(job, "eps", 0.40),
+                    min_samples=getattr(job, "min_samples", 2),
                 )
             )
 

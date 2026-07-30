@@ -35,7 +35,7 @@ class JobDownloadView(APIView):
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             # 1. Write clusters and their images
             for cluster in job.clusters.all():
-                folder_name = f"Cluster_{cluster.cluster_number}"
+                folder_name = f"Person_{cluster.cluster_number + 1}"
                 for cluster_image in cluster.images.all():
                     img = cluster_image.image
                     if img.image and img.image.storage.exists(img.image.name):
@@ -58,5 +58,53 @@ class JobDownloadView(APIView):
         job_id_prefix = job.id.hex[:8] if hasattr(job.id, "hex") else str(job.id)[:8]
         response["Content-Disposition"] = (
             f'attachment; filename="job_{job_id_prefix}_results.zip"'
+        )
+        return response
+
+    def post(self, request, job_id):
+        job = JobRepository.get_by_id(job_id)
+
+        if job is None:
+            return Response(
+                {"detail": "Job not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        mapping = request.data.get("mapping", {})
+        noise = request.data.get("noise", [])
+
+        # Build lookup dict of images
+        images = {img.image.name: img for img in job.images.all() if img.image}
+
+        # Create in-memory ZIP file
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            # 1. Write clustered files
+            for folder_name, img_paths in mapping.items():
+                safe_folder = "".join(c for c in folder_name if c.isalnum() or c in " -_").strip()
+                if not safe_folder:
+                    safe_folder = "Cluster"
+
+                for path in img_paths:
+                    img = images.get(path)
+                    if img and img.image and img.image.storage.exists(img.image.name):
+                        filename = os.path.basename(img.image.name)
+                        with img.image.open("rb") as f:
+                            zip_file.writestr(f"{safe_folder}/{filename}", f.read())
+
+            # 2. Write Noise / Unclustered images
+            for path in noise:
+                img = images.get(path)
+                if img and img.image and img.image.storage.exists(img.image.name):
+                    filename = os.path.basename(img.image.name)
+                    with img.image.open("rb") as f:
+                        zip_file.writestr(f"Noise/{filename}", f.read())
+
+        # Respond with ZIP file
+        buffer.seek(0)
+        response = HttpResponse(buffer.getvalue(), content_type="application/zip")
+        job_id_prefix = job.id.hex[:8] if hasattr(job.id, "hex") else str(job.id)[:8]
+        response["Content-Disposition"] = (
+            f'attachment; filename="job_{job_id_prefix}_custom.zip"'
         )
         return response

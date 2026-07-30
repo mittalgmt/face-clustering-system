@@ -135,6 +135,15 @@ class ImageProcessingPipeline:
         Process one uploaded image.
         """
 
+        # Reuse existing embedding if already calculated
+        if image.embedding:
+            image.mark_completed()
+            return ProcessedImage(
+                image=image,
+                embedding=image.embedding,
+                duplicate=image.duplicate,
+            )
+
         image.mark_processing()
 
         # Hash was already generated during upload

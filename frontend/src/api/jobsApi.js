@@ -32,8 +32,11 @@ export async function deleteJob(jobId) {
  * Trigger re-clustering on a job.
  * @param {string} jobId - UUID
  */
-export async function reclusterJob(jobId) {
-  const response = await api.post(`jobs/${jobId}/recluster/`)
+export async function reclusterJob(jobId, params = {}) {
+  const response = await api.post(`jobs/${jobId}/recluster/`, {
+    eps: params.eps,
+    min_samples: params.minSamples
+  })
   return response.data
 }
 
@@ -41,14 +44,21 @@ export async function reclusterJob(jobId) {
  * Download clustered results ZIP.
  * @param {string} jobId - UUID
  */
-export async function downloadJobResults(jobId) {
-  const response = await api.get(`jobs/${jobId}/download/`, {
-    responseType: 'blob',
-  })
+export async function downloadJobResults(jobId, customMapping = null) {
+  let response;
+  if (customMapping) {
+    response = await api.post(`jobs/${jobId}/download/`, customMapping, {
+      responseType: 'blob',
+    })
+  } else {
+    response = await api.get(`jobs/${jobId}/download/`, {
+      responseType: 'blob',
+    })
+  }
   const url = window.URL.createObjectURL(new Blob([response.data]))
   const link = document.createElement('a')
   link.href = url
-  link.setAttribute('download', `job_${jobId.slice(0, 8)}_results.zip`)
+  link.setAttribute('download', customMapping ? `job_${jobId.slice(0, 8)}_custom.zip` : `job_${jobId.slice(0, 8)}_results.zip`)
   document.body.appendChild(link)
   link.click()
   link.remove()

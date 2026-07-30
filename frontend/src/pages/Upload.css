@@ -126,3 +126,21 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
+
+.upload-job-name-input {
+  width: 100%;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.upload-job-name-input:focus {
+  border-color: var(--accent-light);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}

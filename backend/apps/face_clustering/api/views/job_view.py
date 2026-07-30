@@ -36,14 +36,19 @@ class JobView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Clean up files on disk
-        for img in job.images.all():
-            if img.image and img.image.storage.exists(img.image.name):
-                img.image.storage.delete(img.image.name)
+        # Soft delete: flag job as is_deleted
+        job.is_deleted = True
+        job.save(update_fields=["is_deleted"])
 
-        job.delete()
+        # Modify image hashes to avoid unique constraint violations on new uploads
+        for img in job.images.all():
+            new_hash = f"{img.image_hash}_del_{job.id.hex[:8]}"
+            if len(new_hash) > 64:
+                new_hash = new_hash[-64:]
+            img.image_hash = new_hash
+            img.save(update_fields=["image_hash"])
 
         return Response(
-            {"detail": "Job and all related data deleted successfully."},
+            {"detail": "Job soft-deleted successfully."},
             status=status.HTTP_200_OK,
         )

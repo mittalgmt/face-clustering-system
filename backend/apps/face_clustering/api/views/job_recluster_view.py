@@ -15,41 +15,52 @@ class JobReclusterView(APIView):
     """
 
     def post(self, request, job_id):
-        job = JobRepository.get_by_id(job_id)
+        parent_job = JobRepository.get_by_id(job_id)
 
-        if job is None:
+        if parent_job is None:
             return Response(
                 {"detail": "Job not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        with transaction.atomic():
-            # Reset job fields
-            job.status = JobStatus.PENDING
-            job.progress = 0
-            job.total_clusters = 0
-            job.completed_at = None
-            job.save()
+        # Get custom parameters from request or fall back
+        eps = float(request.data.get("eps", parent_job.eps))
+        min_samples = int(request.data.get("min_samples", parent_job.min_samples))
 
-            # Reset image fields
-            job.images.all().update(
-                processing_status=ImageProcessingStatus.PENDING,
-                error_message="",
-                face_detected=False,
-                duplicate=False
+        with transaction.atomic():
+            # Create a new version of the job
+            new_job = ProcessingJob.objects.create(
+                status=JobStatus.PENDING,
+                progress=0,
+                total_images=parent_job.total_images,
+                eps=eps,
+                min_samples=min_samples,
             )
 
-            # Delete old clusters (cascade deletes cluster_images)
-            job.clusters.all().delete()
+            # Clone images and copy computed embeddings
+            for img in parent_job.images.all():
+                new_hash = f"{img.image_hash}_{new_job.id.hex[:8]}"
+                if len(new_hash) > 64:
+                    new_hash = new_hash[-64:]
 
-        # Enqueue Celery task for reprocessing
-        process_job_task.delay(str(job.id))
+                UploadedImage.objects.create(
+                    job=new_job,
+                    image=img.image,
+                    image_hash=new_hash,
+                    embedding=img.embedding,
+                    face_detected=img.face_detected,
+                    duplicate=img.duplicate,
+                    processing_status=ImageProcessingStatus.PENDING,
+                )
+
+        # Enqueue Celery task for the new job version
+        process_job_task.delay(str(new_job.id))
 
         return Response(
             {
-                "job_id": str(job.id),
-                "status": job.status,
-                "message": "Re-clustering job scheduled successfully.",
+                "job_id": str(new_job.id),
+                "status": new_job.status,
+                "message": "Re-clustering job version scheduled successfully.",
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_201_CREATED,
         )

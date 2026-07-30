@@ -12,6 +12,6 @@ class JobListView(APIView):
     """
 
     def get(self, request):
-        jobs = ProcessingJob.objects.all().order_by("-created_at")
+        jobs = ProcessingJob.objects.filter(is_deleted=False).order_by("-created_at")
         serializer = JobSerializer(jobs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

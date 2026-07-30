@@ -57,6 +57,22 @@ class ProcessingJob(models.Model):
         default=0
     )
 
+    eps = models.FloatField(
+        default=0.40,
+        help_text="DBSCAN epsilon radius"
+    )
+
+    min_samples = models.PositiveIntegerField(
+        default=2,
+        help_text="DBSCAN minimum samples per cluster"
+    )
+
+    is_deleted = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Soft delete flag"
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True
     )
