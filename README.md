@@ -220,6 +220,3 @@ This prevents spurious high confidences for distinct people, guaranteeing that b
 - **Response**: Returns list of unclustered/outlier faces.
 
 ---
-
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
