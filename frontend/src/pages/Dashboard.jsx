@@ -1,30 +1,216 @@
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import DashboardCard from '../components/DashboardCard'
-import HistoryTable from '../components/HistoryTable'
+import { getJobs, deleteJob, reclusterJob, downloadJobResults } from '../api/jobsApi'
 import './Dashboard.css'
 
-const HISTORY_KEY = 'faceClusterHistory'
+const CUSTOM_NAMES_KEY = 'faceClusterCustomNames'
 
-function getHistory() {
+function getCustomNames() {
   try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+    return JSON.parse(localStorage.getItem(CUSTOM_NAMES_KEY) || '{}')
   } catch {
-    return []
+    return {}
   }
 }
 
-function computeStats(history) {
-  const total      = history.length
-  const completed  = history.filter((j) => j.status === 'COMPLETED').length
-  const totalImg   = history.reduce((s, j) => s + (j.total_images || 0), 0)
-  const totalClusters = history.reduce((s, j) => s + (j.total_clusters || 0), 0)
-  return { total, completed, totalImg, totalClusters }
+function StatusBadge({ status }) {
+  const map = {
+    PENDING:    'badge-pending',
+    PROCESSING: 'badge-processing',
+    COMPLETED:  'badge-completed',
+    FAILED:     'badge-failed',
+  }
+  return (
+    <span className={`badge ${map[status] || 'badge-pending'}`}>
+      <span className="badge-dot" aria-hidden="true" />
+      {status}
+    </span>
+  )
+}
+
+function formatDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
 }
 
 export default function Dashboard() {
-  const history = getHistory()
-  const stats   = computeStats(history)
-  const recent  = history.slice(0, 5)
+  const navigate = useNavigate()
+  const [jobs, setJobs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  
+  // Custom Names
+  const [customNames, setCustomNames] = useState(() => getCustomNames())
+  const [editingJobId, setEditingJobId] = useState(null)
+  const [editNameValue, setEditNameValue] = useState('')
+
+  // Search & Sort State
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('date-desc')
+
+  // Deletion Modal State
+  const [deleteConfirmJob, setDeleteConfirmJob] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  // Action Pending States
+  const [reclusteringIds, setReclusteringIds] = useState(new Set())
+  const [downloadingIds, setDownloadingIds] = useState(new Set())
+
+  // Fetch all jobs
+  const fetchJobs = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true)
+    try {
+      const data = await getJobs()
+      setJobs(data)
+      setError(null)
+    } catch (err) {
+      console.error('Failed to fetch jobs:', err)
+      setError('Could not load jobs from backend.')
+    } finally {
+      if (showLoading) setLoading(false)
+    }
+  }, [])
+
+  // Initial Load
+  useEffect(() => {
+    fetchJobs(true)
+  }, [fetchJobs])
+
+  // Polling for active jobs
+  useEffect(() => {
+    const hasActiveJobs = jobs.some(
+      (job) => job.status === 'PROCESSING' || job.status === 'PENDING'
+    )
+    if (!hasActiveJobs) return
+
+    const interval = setInterval(() => {
+      fetchJobs(false)
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [jobs, fetchJobs])
+
+  // Stats computation
+  const stats = (() => {
+    const total = jobs.length
+    const completed = jobs.filter((j) => j.status === 'COMPLETED').length
+    const totalImg = jobs.reduce((s, j) => s + (j.total_images || 0), 0)
+    const totalClusters = jobs.reduce((s, j) => s + (j.total_clusters || 0), 0)
+    return { total, completed, totalImg, totalClusters }
+  })()
+
+  // Handle job renaming
+  const handleStartRename = (jobId, currentName) => {
+    setEditingJobId(jobId)
+    setEditNameValue(currentName)
+  }
+
+  const handleSaveRename = (jobId) => {
+    const trimmed = editNameValue.trim()
+    const updatedNames = { ...customNames }
+    if (trimmed) {
+      updatedNames[jobId] = trimmed
+    } else {
+      delete updatedNames[jobId]
+    }
+    setCustomNames(updatedNames)
+    localStorage.setItem(CUSTOM_NAMES_KEY, JSON.stringify(updatedNames))
+    setEditingJobId(null)
+  }
+
+  const handleKeyDownRename = (e, jobId) => {
+    if (e.key === 'Enter') {
+      handleSaveRename(jobId)
+    } else if (e.key === 'Escape') {
+      setEditingJobId(null)
+    }
+  }
+
+  // Handle delete trigger
+  const handleDeleteClick = (job) => {
+    setDeleteConfirmJob(job)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmJob) return
+    setDeleting(true)
+    try {
+      await deleteJob(deleteConfirmJob.id)
+      
+      // Clean local storage custom name
+      const updatedNames = { ...customNames }
+      delete updatedNames[deleteConfirmJob.id]
+      setCustomNames(updatedNames)
+      localStorage.setItem(CUSTOM_NAMES_KEY, JSON.stringify(updatedNames))
+
+      setDeleteConfirmJob(null)
+      fetchJobs(false)
+    } catch (err) {
+      alert('Failed to delete job.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  // Handle re-clustering trigger
+  const handleReclusterClick = async (jobId) => {
+    setReclusteringIds((prev) => new Set([...prev, jobId]))
+    try {
+      await reclusterJob(jobId)
+      fetchJobs(false)
+    } catch (err) {
+      alert('Failed to trigger re-clustering.')
+    } finally {
+      setReclusteringIds((prev) => {
+        const next = new Set(prev)
+        next.delete(jobId)
+        return next
+      })
+    }
+  }
+
+  // Handle download results trigger
+  const handleDownloadClick = async (jobId) => {
+    setDownloadingIds((prev) => new Set([...prev, jobId]))
+    try {
+      await downloadJobResults(jobId)
+    } catch (err) {
+      alert('Failed to download results.')
+    } finally {
+      setDownloadingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(jobId)
+        return next
+      })
+    }
+  }
+
+  // Search & Sort implementation
+  const filteredAndSortedJobs = jobs
+    .filter((job) => {
+      const customName = customNames[job.id] || ''
+      const searchString = `${job.id} ${customName} ${job.status}`.toLowerCase()
+      return searchString.includes(searchQuery.toLowerCase())
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date-desc') {
+        return new Date(b.created_at) - new Date(a.created_at)
+      }
+      if (sortBy === 'date-asc') {
+        return new Date(a.created_at) - new Date(b.created_at)
+      }
+      if (sortBy === 'images-desc') {
+        return (b.total_images || 0) - (a.total_images || 0)
+      }
+      if (sortBy === 'status') {
+        return a.status.localeCompare(b.status)
+      }
+      return 0
+    })
 
   return (
     <div className="page dashboard">
@@ -43,9 +229,6 @@ export default function Dashboard() {
             <div className="dash-hero-actions">
               <Link to="/upload" id="hero-upload-btn" className="btn btn-primary btn-lg">
                 ↑ &nbsp;Upload Images
-              </Link>
-              <Link to="/history" className="btn btn-secondary btn-lg">
-                View History
               </Link>
             </div>
           </div>
@@ -89,13 +272,218 @@ export default function Dashboard() {
           />
         </section>
 
-        {/* Recent Jobs */}
+        {/* Interactive Jobs Command Center */}
         <section className="dash-recent" aria-labelledby="recent-heading">
           <div className="dash-section-header">
-            <h2 id="recent-heading" className="dash-section-title">Recent Jobs</h2>
-            <Link to="/history" className="btn btn-ghost btn-sm">View all →</Link>
+            <h2 id="recent-heading" className="dash-section-title">Clustering Jobs</h2>
           </div>
-          <HistoryTable jobs={recent} />
+
+          {/* Controls Bar */}
+          <div className="dash-controls animate-fade-in-up">
+            <div className="dash-search-wrapper">
+              <span className="dash-search-icon">🔍</span>
+              <input
+                type="text"
+                className="dash-search-input"
+                placeholder="Search by job name, ID, or status..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search jobs"
+              />
+            </div>
+            
+            <div className="dash-sort-wrapper">
+              <span className="dash-sort-label">Sort By:</span>
+              <select
+                className="dash-sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                aria-label="Sort jobs"
+              >
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+                <option value="images-desc">Most Images</option>
+                <option value="status">Status</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Jobs Table/Grid */}
+          <div className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+            {loading ? (
+              <div className="empty-state">
+                <span className="empty-state-icon spinner" aria-hidden="true">⚙</span>
+                <p>Loading jobs list...</p>
+              </div>
+            ) : error ? (
+              <div className="empty-state">
+                <span className="empty-state-icon" aria-hidden="true">⚠️</span>
+                <p>{error}</p>
+                <button className="btn btn-secondary btn-sm" onClick={() => fetchJobs(true)}>
+                  Try Again
+                </button>
+              </div>
+            ) : filteredAndSortedJobs.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-state-icon" aria-hidden="true">📂</span>
+                <p>{searchQuery ? 'No matching jobs found.' : 'No previous jobs found.'}</p>
+                {!searchQuery && (
+                  <Link to="/upload" className="btn btn-primary btn-sm">
+                    Upload Images
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="history-table-wrapper">
+                <table className="history-table" aria-label="Jobs command center">
+                  <thead>
+                    <tr>
+                      <th>Job Name</th>
+                      <th>Status</th>
+                      <th>Images</th>
+                      <th>Clusters</th>
+                      <th>Upload Date</th>
+                      <th>Progress / Completion</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedJobs.map((job, i) => {
+                      const isEditingName = editingJobId === job.id
+                      const defaultJobName = `Job #${job.id.slice(0, 8)}`
+                      const currentJobName = customNames[job.id] || defaultJobName
+
+                      const isReclustering = reclusteringIds.has(job.id)
+                      const isDownloading = downloadingIds.has(job.id)
+                      
+                      return (
+                        <tr key={job.id} className="history-row" style={{ animationDelay: `${i * 30}ms` }}>
+                          
+                          {/* Job Name with Inline Edit */}
+                          <td>
+                            {isEditingName ? (
+                              <input
+                                type="text"
+                                className="job-name-input"
+                                value={editNameValue}
+                                onChange={(e) => setEditNameValue(e.target.value)}
+                                onBlur={() => handleSaveRename(job.id)}
+                                onKeyDown={(e) => handleKeyDownRename(e, job.id)}
+                                autoFocus
+                              />
+                            ) : (
+                              <div className="job-name-cell">
+                                <span className="job-name-display" title={currentJobName}>
+                                  {currentJobName}
+                                </span>
+                                <button
+                                  className="job-name-edit-btn"
+                                  onClick={() => handleStartRename(job.id, currentJobName)}
+                                  title="Rename job"
+                                  aria-label={`Rename ${currentJobName}`}
+                                >
+                                  ✏️
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                          
+                          {/* Status */}
+                          <td>
+                            <StatusBadge status={job.status} />
+                          </td>
+                          
+                          {/* Images count */}
+                          <td className="history-num">{job.total_images ?? '—'}</td>
+                          
+                          {/* Clusters count */}
+                          <td className="history-num">{job.total_clusters ?? '—'}</td>
+                          
+                          {/* Upload Date */}
+                          <td className="history-date">{formatDate(job.created_at)}</td>
+                          
+                          {/* Progress */}
+                          <td>
+                            {job.status === 'PROCESSING' || job.status === 'PENDING' ? (
+                              <div className="dash-progress-wrapper">
+                                <span className="dash-progress-text">{job.progress || 0}% complete</span>
+                                <div className="dash-progress-track">
+                                  <div className="dash-progress-fill" style={{ width: `${job.progress || 0}%` }} />
+                                </div>
+                              </div>
+                            ) : job.status === 'COMPLETED' ? (
+                              <span className="text-success" style={{ fontWeight: 600 }}>100% complete</span>
+                            ) : (
+                              <span className="text-danger" style={{ fontWeight: 600 }}>Failed</span>
+                            )}
+                          </td>
+                          
+                          {/* Actions */}
+                          <td>
+                            <div className="dash-actions-cell">
+                              {/* View */}
+                              {job.status === 'COMPLETED' ? (
+                                <Link
+                                  to={`/results/${job.id}`}
+                                  className="dash-action-btn btn-view"
+                                  title="View Results"
+                                  aria-label={`View results for ${currentJobName}`}
+                                >
+                                  👁️
+                                </Link>
+                              ) : (
+                                <Link
+                                  to={`/processing/${job.id}`}
+                                  className="dash-action-btn btn-view"
+                                  title="Check Status"
+                                  aria-label={`Check status for ${currentJobName}`}
+                                >
+                                  👁️
+                                </Link>
+                              )}
+
+                              {/* Re-cluster */}
+                              <button
+                                className="dash-action-btn btn-recluster"
+                                onClick={() => handleReclusterClick(job.id)}
+                                disabled={isReclustering || job.status === 'PENDING' || job.status === 'PROCESSING'}
+                                title={isReclustering ? "Scheduling..." : "Re-run clustering"}
+                                aria-label={`Re-run clustering for ${currentJobName}`}
+                              >
+                                🔄
+                              </button>
+
+                              {/* Download */}
+                              <button
+                                className="dash-action-btn btn-download"
+                                onClick={() => handleDownloadClick(job.id)}
+                                disabled={isDownloading || job.status !== 'COMPLETED'}
+                                title={isDownloading ? "Downloading..." : "Download ZIP results"}
+                                aria-label={`Download results for ${currentJobName}`}
+                              >
+                                📥
+                              </button>
+
+                              {/* Delete */}
+                              <button
+                                className="dash-action-btn btn-delete"
+                                onClick={() => handleDeleteClick(job)}
+                                disabled={isReclustering || isDownloading}
+                                title="Delete job"
+                                aria-label={`Delete job ${currentJobName}`}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </section>
 
         {/* How it works */}
@@ -119,6 +507,65 @@ export default function Dashboard() {
         </section>
 
       </div>
+
+      {/* Deletion Confirmation Dialog Modal */}
+      {deleteConfirmJob && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+          <div className="modal-content">
+            <div className="modal-header">
+              <span className="modal-warning-icon" aria-hidden="true">⚠️</span>
+              <h3 id="delete-modal-title" className="modal-title">Confirm Delete</h3>
+            </div>
+            
+            <div className="modal-body">
+              <p>Are you sure you want to delete this job?</p>
+              <p style={{ color: '#ef4444', fontWeight: 600 }}>
+                This will permanently delete the job entry, all computed face clusters, and physically remove all uploaded image files from the backend storage. This action cannot be undone.
+              </p>
+              
+              <div className="modal-item-details">
+                <div className="modal-item-row">
+                  <span>Job Name:</span>
+                  <span className="modal-item-value">
+                    {customNames[deleteConfirmJob.id] || `Job #${deleteConfirmJob.id.slice(0, 8)}`}
+                  </span>
+                </div>
+                <div className="modal-item-row">
+                  <span>Job ID:</span>
+                  <span className="modal-item-value">{deleteConfirmJob.id}</span>
+                </div>
+                <div className="modal-item-row">
+                  <span>Total Images:</span>
+                  <span className="modal-item-value">{deleteConfirmJob.total_images ?? 0}</span>
+                </div>
+                <div className="modal-item-row">
+                  <span>Upload Date:</span>
+                  <span className="modal-item-value">{formatDate(deleteConfirmJob.created_at)}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDeleteConfirmJob(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                style={{ background: '#ef4444', borderColor: '#ef4444', color: '#fff' }}
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Permanently Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

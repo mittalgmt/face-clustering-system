@@ -18,6 +18,7 @@ function getTotalSize(files) {
  * Drag-and-drop upload zone.
  * Accepts images (jpg, jpeg, png, bmp, webp) or a single ZIP file.
  * Displays horizontal scrolling thumbnails of selected images for a gorgeous preview.
+ * Prevents duplicate file selections within the same job upload.
  * @param {{ onFiles: (files: File[]) => void, disabled: boolean }} props
  */
 export default function UploadZone({ onFiles, disabled }) {
@@ -26,17 +27,28 @@ export default function UploadZone({ onFiles, disabled }) {
   const [selectedFiles, setSelectedFiles] = useState([])
   const [previews, setPreviews] = useState([])
   const [validationError, setValidationError] = useState(null)
+  const [duplicateWarning, setDuplicateWarning] = useState(null)
 
-  // Clean up object URLs to avoid memory leaks
+  // Track all preview URLs for clean-up on unmount to prevent leaks
+  const previewsRef = useRef([])
+  useEffect(() => {
+    previewsRef.current = previews
+  }, [previews])
+
   useEffect(() => {
     return () => {
-      previews.forEach((url) => URL.revokeObjectURL(url))
+      previewsRef.current.forEach((p) => {
+        if (p.url) URL.revokeObjectURL(p.url)
+      })
     }
-  }, [previews])
+  }, [])
 
   const processFiles = useCallback((rawFiles) => {
     const files = Array.from(rawFiles)
     setValidationError(null)
+    setDuplicateWarning(null)
+
+    if (files.length === 0) return
 
     // ZIP case
     if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
@@ -57,19 +69,47 @@ export default function UploadZone({ onFiles, disabled }) {
       setValidationError(`Unsupported file type: ${invalid[0].name}`)
       return
     }
-    if (files.length > MAX_IMAGES) {
+
+    // Detect and filter duplicates within the current selected files list (comparing name + size)
+    const seen = new Set()
+    const uniqueFiles = []
+    const duplicateNames = []
+
+    for (const f of files) {
+      const key = `${f.name}-${f.size}`
+      if (seen.has(key)) {
+        duplicateNames.push(f.name)
+      } else {
+        seen.add(key)
+        uniqueFiles.push(f)
+      }
+    }
+
+    if (duplicateNames.length > 0) {
+      setDuplicateWarning(
+        `Skipped ${duplicateNames.length} duplicate file(s) in this selection: ${duplicateNames.slice(0, 3).join(', ')}${duplicateNames.length > 3 ? '...' : ''}`
+      )
+    }
+
+    if (uniqueFiles.length > MAX_IMAGES) {
       setValidationError(`Maximum ${MAX_IMAGES} images allowed.`)
       return
     }
-    const oversized = files.filter((f) => f.size > 10 * 1024 * 1024)
+
+    const oversized = uniqueFiles.filter((f) => f.size > 10 * 1024 * 1024)
     if (oversized.length > 0) {
       setValidationError(`${oversized[0].name} exceeds the 10 MB limit.`)
       return
     }
 
-    setSelectedFiles(files)
-    // Create preview URLs for the first 12 images
-    const previewUrls = files.slice(0, 12).map((file) => URL.createObjectURL(file))
+    setSelectedFiles(uniqueFiles)
+    
+    // Create preview URLs for the first 20 images
+    const previewUrls = uniqueFiles.slice(0, 20).map((file) => ({
+      id: `${file.name}-${file.size}`,
+      url: URL.createObjectURL(file),
+      file: file
+    }))
     setPreviews(previewUrls)
   }, [])
 
@@ -83,7 +123,10 @@ export default function UploadZone({ onFiles, disabled }) {
     [disabled, processFiles]
   )
 
-  const handleDragOver = (e) => { e.preventDefault(); if (!disabled) setDragging(true) }
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    if (!disabled) setDragging(true)
+  }
   const handleDragLeave = () => setDragging(false)
 
   const handleChange = (e) => {
@@ -102,10 +145,33 @@ export default function UploadZone({ onFiles, disabled }) {
 
   const clearFiles = (e) => {
     e.stopPropagation()
+    // Revoke all preview URLs
+    previews.forEach((p) => URL.revokeObjectURL(p.url))
     setSelectedFiles([])
     setPreviews([])
     setValidationError(null)
+    setDuplicateWarning(null)
     if (inputRef.current) inputRef.current.value = ''
+  }
+
+  const handleRemoveImage = (previewId, e) => {
+    e.stopPropagation()
+    // Revoke object URL for the removed preview item
+    const target = previews.find((p) => p.id === previewId)
+    if (target) URL.revokeObjectURL(target.url)
+
+    const updatedPreviews = previews.filter((p) => p.id !== previewId)
+    setPreviews(updatedPreviews)
+
+    const updatedFiles = selectedFiles.filter((f) => `${f.name}-${f.size}` !== previewId)
+    setSelectedFiles(updatedFiles)
+
+    // Reset validations and warnings if zero files remain
+    if (updatedFiles.length === 0) {
+      setValidationError(null)
+      setDuplicateWarning(null)
+      if (inputRef.current) inputRef.current.value = ''
+    }
   }
 
   const isZip = selectedFiles.length === 1 && selectedFiles[0]?.name?.endsWith('.zip')
@@ -175,6 +241,7 @@ export default function UploadZone({ onFiles, disabled }) {
                 onClick={clearFiles}
                 title="Remove files"
                 aria-label="Remove selected files"
+                disabled={disabled}
               >
                 ✕
               </button>
@@ -183,9 +250,19 @@ export default function UploadZone({ onFiles, disabled }) {
             {/* Horizontal scroll grid of selected image previews */}
             {!isZip && previews.length > 0 && (
               <div className="upload-previews-carousel">
-                {previews.map((url, i) => (
-                  <div key={i} className="upload-preview-item">
-                    <img src={url} alt={`preview-${i}`} />
+                {previews.map((p, i) => (
+                  <div key={p.id} className="upload-preview-item">
+                    <img src={p.url} alt={`preview-${i}`} />
+                    {!disabled && (
+                      <button
+                        className="upload-preview-remove-btn"
+                        onClick={(e) => handleRemoveImage(p.id, e)}
+                        title="Remove image"
+                        aria-label={`Remove ${p.file.name}`}
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 ))}
                 {selectedFiles.length > previews.length && (
@@ -198,6 +275,12 @@ export default function UploadZone({ onFiles, disabled }) {
           </div>
         )}
       </div>
+
+      {duplicateWarning && (
+        <div className="upload-warning" role="alert">
+          💡 {duplicateWarning}
+        </div>
+      )}
 
       {validationError && (
         <div className="upload-error" role="alert" id="upload-error-msg">

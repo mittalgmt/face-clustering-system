@@ -183,3 +183,307 @@
 @media (max-width: 480px) {
   .dash-stats { grid-template-columns: 1fr; }
 }
+
+/* --- Interactive Jobs Dashboard Controls --- */
+.dash-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.dash-search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.dash-search-icon {
+  position: absolute;
+  left: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  pointer-events: none;
+}
+
+.dash-search-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md) var(--space-sm) var(--space-xl);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  transition: all 0.2s ease;
+}
+
+.dash-search-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--accent-light);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.dash-sort-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.dash-sort-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dash-sort-select {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.dash-sort-select:focus {
+  border-color: var(--accent-light);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* --- Inline Job Renaming --- */
+.job-name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  max-width: 260px;
+}
+
+.job-name-display {
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-name-edit-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+  font-size: 0.8rem;
+  opacity: 0.5;
+}
+
+.job-name-cell:hover .job-name-edit-btn {
+  opacity: 1;
+}
+
+.job-name-edit-btn:hover {
+  color: var(--accent-light);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.job-name-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--accent-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  width: 100%;
+  outline: none;
+}
+
+/* --- Progress Bar --- */
+.dash-progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  width: 120px;
+}
+
+.dash-progress-text {
+  font-size: var(--text-xs);
+  color: var(--accent-light);
+  font-weight: 600;
+}
+
+.dash-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.dash-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-light), var(--accent-glow));
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+/* --- Actions Row --- */
+.dash-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.dash-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.dash-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dash-action-btn.btn-view:hover {
+  color: var(--accent-light);
+  border-color: var(--accent-light);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+}
+
+.dash-action-btn.btn-recluster:hover {
+  color: #f59e0b;
+  border-color: #f59e0b;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+}
+
+.dash-action-btn.btn-download:hover {
+  color: #22c55e;
+  border-color: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+}
+
+.dash-action-btn.btn-delete:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+.dash-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* --- Deletion Confirmation Modal --- */
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 480px;
+  background: rgba(23, 23, 37, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-2xl);
+  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  color: #ef4444;
+}
+
+.modal-warning-icon {
+  font-size: 1.5rem;
+}
+
+.modal-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin: 0;
+}
+
+.modal-body {
+  margin-bottom: var(--space-xl);
+  line-height: 1.6;
+}
+
+.modal-body p {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.modal-item-details {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.modal-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  padding: var(--space-xs) 0;
+  color: var(--text-muted);
+}
+
+.modal-item-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+

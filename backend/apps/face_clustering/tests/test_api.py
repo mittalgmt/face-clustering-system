@@ -7,6 +7,8 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.face_clustering.models import ProcessingJob
+
 
 PNG_BYTES = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
@@ -84,3 +86,15 @@ class UploadApiTests(APITestCase):
         self.assertEqual(response.data["status"], "PENDING")
         self.assertIn("job_id", response.data)
         mock_delay.assert_called_once()
+
+    def test_completed_job_download_uses_uuid_filename_prefix(self):
+        job = ProcessingJob.objects.create(status="COMPLETED")
+
+        response = self.client.get(f"/api/v1/jobs/{job.id}/download/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/zip")
+        self.assertEqual(
+            response["Content-Disposition"],
+            f'attachment; filename="job_{job.id.hex[:8]}_results.zip"',
+        )
