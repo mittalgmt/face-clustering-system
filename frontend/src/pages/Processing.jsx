@@ -142,54 +142,71 @@ export default function Processing() {
 
           {job && !isFailed && (
             <>
-              {/* Progress Ring */}
-              <div className="proc-ring-wrapper" aria-label={`Progress: ${progress}%`}>
-                <svg className="proc-ring" viewBox="0 0 120 120" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="var(--accent)" />
-                      <stop offset="100%" stopColor="var(--accent-light)" />
-                    </linearGradient>
-                  </defs>
-                  <circle className="proc-ring-track" cx="60" cy="60" r="52" />
-                  <circle
-                    className="proc-ring-fill"
-                    cx="60" cy="60" r="52"
-                    strokeDasharray={`${2 * Math.PI * 52}`}
-                    strokeDashoffset={`${2 * Math.PI * 52 * (1 - progress / 100)}`}
-                    style={{ transition: 'stroke-dashoffset 0.6s ease' }}
-                  />
-                </svg>
-                <div className="proc-ring-label">
-                  <span className="proc-ring-pct">{progress}%</span>
-                  <span className="proc-ring-sub">complete</span>
-                </div>
-              </div>
+              {/* Two-column body: ring left, steps right */}
+              <div className="proc-body">
 
-              {/* ETA Display */}
-              {etaMessage && (
-                <div className="proc-eta animate-fade-in">
-                  ⏱️ {etaMessage}
-                </div>
-              )}
-
-              {/* Pipeline Progress Checklist */}
-              <div className="proc-steps-container">
-                {PIPELINE_STEPS.map((step, idx) => {
-                  const stepStatus = getStepStatus(idx)
-                  return (
-                    <div key={step.id} className={`proc-step-item proc-step-item--${stepStatus}`}>
-                      <div className="proc-step-dot-wrapper">
-                        <div className="proc-step-dot" />
-                        <div className="proc-step-line" />
-                      </div>
-                      <span className="proc-step-label">{step.label}</span>
+                {/* Left: Progress Ring + ETA */}
+                <div className="proc-left">
+                  <div className="proc-ring-wrapper" aria-label={`Progress: ${progress}%`}>
+                    <svg className="proc-ring" viewBox="0 0 120 120" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="var(--accent)" />
+                          <stop offset="100%" stopColor="var(--accent-light)" />
+                        </linearGradient>
+                      </defs>
+                      <circle className="proc-ring-track" cx="60" cy="60" r="52" />
+                      <circle
+                        className="proc-ring-fill"
+                        cx="60" cy="60" r="52"
+                        strokeDasharray={`${2 * Math.PI * 52}`}
+                        strokeDashoffset={`${2 * Math.PI * 52 * (1 - progress / 100)}`}
+                        style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                      />
+                    </svg>
+                    <div className="proc-ring-label">
+                      <span className="proc-ring-pct">{progress}%</span>
+                      <span className="proc-ring-sub">complete</span>
                     </div>
-                  )
-                })}
+                  </div>
+
+                  {etaMessage && (
+                    <div className="proc-eta animate-fade-in">
+                      ⏱️ {etaMessage}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Pipeline steps + message */}
+                <div className="proc-right">
+                  <div className="proc-steps-container">
+                    {PIPELINE_STEPS.map((step, idx) => {
+                      const stepStatus = getStepStatus(idx)
+                      return (
+                        <div key={step.id} className={`proc-step-item proc-step-item--${stepStatus}`}>
+                          <div className="proc-step-dot-wrapper">
+                            <div className="proc-step-dot" />
+                            <div className="proc-step-line" />
+                          </div>
+                          <span className="proc-step-label">{step.label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <p className="proc-message">
+                    {STATUS_MESSAGES[status] || 'Processing…'}
+                  </p>
+
+                  {isCompleted && (
+                    <Link to={`/results/${jobId}`} className="btn btn-primary btn-lg proc-results-btn" id="view-results-btn">
+                      View Results →
+                    </Link>
+                  )}
+                </div>
               </div>
 
-              {/* Stats Row */}
+              {/* Stats Row — full width below the body */}
               <div className="proc-stats">
                 <div className="proc-stat">
                   <span className="proc-stat-value">{job.total_images}</span>
@@ -209,16 +226,6 @@ export default function Processing() {
                   <span className="proc-stat-label">Status</span>
                 </div>
               </div>
-
-              <p className="proc-message">
-                {STATUS_MESSAGES[status] || 'Processing…'}
-              </p>
-
-              {isCompleted && (
-                <Link to={`/results/${jobId}`} className="btn btn-primary btn-lg proc-results-btn" id="view-results-btn">
-                  View Results →
-                </Link>
-              )}
             </>
           )}
 

@@ -1,13 +1,14 @@
+/* ─── Page wrapper ─── */
 .proc-header {
   text-align: center;
-  padding: var(--space-2xl) 0 var(--space-xl);
+  padding: var(--space-xl) 0 var(--space-md);
 }
 
 .proc-title {
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin-bottom: var(--space-sm);
+  margin-bottom: 0;
 }
 
 .proc-subtitle {
@@ -24,33 +25,58 @@
 }
 
 .proc-stepper {
-  margin-bottom: var(--space-2xl);
+  margin-bottom: var(--space-lg);
 }
 
+/* ─── Main card ─── */
 .proc-card {
-  max-width: 560px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: var(--space-2xl);
+  padding: var(--space-xl) var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* ─── Two-column body ─── */
+.proc-body {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: var(--space-xl);
+  align-items: center;
+  width: 100%;
+}
+
+/* ─── Left column: ring ─── */
+.proc-left {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-xl);
+  gap: var(--space-sm);
 }
 
+/* ─── Right column: steps + message ─── */
+.proc-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* ─── Loading ─── */
 .proc-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-lg);
-  padding: var(--space-2xl);
+  gap: var(--space-md);
+  padding: var(--space-xl);
   color: var(--text-secondary);
 }
 
-/* SVG Ring */
+/* ─── SVG Ring ─── */
 .proc-ring-wrapper {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 140px;
+  height: 140px;
   flex-shrink: 0;
 }
 
@@ -85,7 +111,7 @@
 }
 
 .proc-ring-pct {
-  font-size: var(--text-3xl);
+  font-size: var(--text-2xl);
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.04em;
@@ -99,28 +125,34 @@
   letter-spacing: 0.08em;
 }
 
-.proc-progress {
-  width: 100%;
+/* ─── ETA ─── */
+.proc-eta {
+  font-size: var(--text-xs);
+  color: var(--accent-light);
+  font-weight: 600;
+  text-align: center;
 }
 
-/* Stats */
+/* ─── Stats row (below body) ─── */
 .proc-stats {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-xl);
   width: 100%;
+  padding: var(--space-md) 0;
+  border-top: 1px solid var(--border);
 }
 
 .proc-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .proc-stat-value {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -134,7 +166,7 @@
 
 .proc-stat-divider {
   width: 1px;
-  height: 40px;
+  height: 36px;
   background: var(--border);
 }
 
@@ -151,44 +183,16 @@
   animation: glow-pulse 2s ease-in-out infinite;
 }
 
-/* Error */
-.proc-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-lg);
-  padding: var(--space-xl);
-  text-align: center;
-  color: var(--text-secondary);
-}
-
-.proc-error-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--error-bg);
-  border: 2px solid var(--error);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  color: var(--error);
-  line-height: 64px;
-  text-align: center;
-}
-
-/* --- Vertical Progress Steps --- */
+/* ─── Vertical Pipeline Steps ─── */
 .proc-steps-container {
   width: 100%;
-  max-width: 380px;
-  margin: var(--space-md) auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
-  padding: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
 }
 
 .proc-step-item {
@@ -196,7 +200,7 @@
   align-items: center;
   gap: var(--space-md);
   position: relative;
-  padding: var(--space-xs) 0;
+  padding: 5px 0;
 }
 
 .proc-step-dot-wrapper {
@@ -204,17 +208,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .proc-step-line {
   position: absolute;
-  top: 24px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
-  height: 16px;
+  height: 12px;
   background: rgba(255, 255, 255, 0.06);
   z-index: 0;
 }
@@ -224,66 +229,75 @@
 }
 
 .proc-step-dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
   z-index: 1;
   transition: all 0.3s ease;
 }
 
-.proc-step-item--pending .proc-step-dot {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.proc-step-item--active .proc-step-dot {
-  background: var(--accent-light);
-  box-shadow: 0 0 10px var(--accent-light);
-  animation: pulse-dot 1.5s infinite alternate;
-}
-
-.proc-step-item--completed .proc-step-dot {
-  background: #22c55e;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
-}
-
-.proc-step-item--failed .proc-step-dot {
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
-}
+.proc-step-item--pending .proc-step-dot  { background: rgba(255,255,255,0.1); }
+.proc-step-item--active  .proc-step-dot  { background: var(--accent-light); box-shadow: 0 0 10px var(--accent-light); animation: pulse-dot 1.5s infinite alternate; }
+.proc-step-item--completed .proc-step-dot { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.4); }
+.proc-step-item--failed  .proc-step-dot  { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.4); }
 
 .proc-step-label {
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--text-muted);
   transition: color 0.3s ease;
-  text-align: left;
 }
 
-.proc-step-item--active .proc-step-label {
-  color: var(--text-primary);
-  font-weight: 600;
-}
+.proc-step-item--active .proc-step-label    { color: var(--text-primary); font-weight: 600; }
+.proc-step-item--completed .proc-step-label { color: var(--text-secondary); }
+.proc-step-item--failed .proc-step-label    { color: #ef4444; font-weight: 600; }
 
-.proc-step-item--completed .proc-step-label {
+/* ─── Error state ─── */
+.proc-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  text-align: center;
   color: var(--text-secondary);
+  width: 100%;
 }
 
-.proc-step-item--failed .proc-step-label {
-  color: #ef4444;
-  font-weight: 600;
-}
-
-.proc-eta {
-  font-size: var(--text-xs);
-  color: var(--accent-light);
-  font-weight: 600;
-  margin-top: var(--space-xs);
+.proc-error-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--error-bg);
+  border: 2px solid var(--error);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: var(--error);
+  line-height: 56px;
   text-align: center;
 }
 
+/* ─── Animations ─── */
 @keyframes pulse-dot {
-  from { transform: scale(1); opacity: 0.7; }
-  to { transform: scale(1.3); opacity: 1; }
+  from { transform: scale(1);   opacity: 0.7; }
+  to   { transform: scale(1.3); opacity: 1;   }
 }
 
+/* ─── Responsive ─── */
+@media (max-width: 540px) {
+  .proc-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .proc-card {
+    padding: var(--space-lg);
+  }
+
+  .proc-right {
+    width: 100%;
+  }
+}
